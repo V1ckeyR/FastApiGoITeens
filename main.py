@@ -1,22 +1,26 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 
 app = FastAPI()
+users = []
 
-@app.get("/")
-def read_root():
-    return {'Hello': 'World'}
 
-@app.get("/greet/{name}")
-def read_name(name: str):
-    return {'Message': f'Greetings, traveler {name.capitalize()}'}
+@app.post("/add_user/{user_name}")
+async def add_user(user_name: str):
+    if user_name in users:
+        raise HTTPException(status_code=400, detail="User with this name already exists")
+    users.append(user_name)
+    return {"user_name": user_name}
 
-@app.get("/calc")
-def calculator(a: int, b: int, operator: str):
-    calculations = {
-        '+': lambda op1, op2: op1 + op2,  # /calc?a=10&b=5&operator=%2B
-        '-': lambda op1, op2: op1 - op2,  # /calc?a=10&b=5&operator=-
-    }
-    return {
-        'result': f'{a} {operator} {b} = {calculations[operator](a, b)}'
-    } if operator in calculations else {f'Unknown operator {operator}'}
+
+@app.get("/get_users")
+async def get_users():
+    return {"users": users}
+
+
+@app.delete("/delete_user/{user_name}")
+async def delete_user(user_name: str):
+    if user_name not in users:
+        raise HTTPException(status_code=404, detail="User not found")
+    users.remove(user_name)
+    return {"message": f"User {user_name} deleted successfully"}
